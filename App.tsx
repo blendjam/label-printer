@@ -1,18 +1,13 @@
 import { StatusBar } from "expo-status-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
 import { useEffect, useState } from "react";
-import {
-  Alert,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Alert, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 type Label = { id: string; name: string; price: string };
+const PDF_WIDTH = (72 / 25.4) * 72;
+const PDF_HEIGHT = (22 / 25.4) * 72;
 const initialLabels: Label[] = [
   { id: "1", name: "Kaju Katli", price: "450" },
   { id: "2", name: "Mysore Pak", price: "380" },
@@ -62,16 +57,25 @@ export default function App() {
   };
   const exportPdf = async () => {
     try {
-      const { printToFileAsync } = await import("expo-print");
-      const { uri } = await printToFileAsync({ html: createPdfMarkup(name, price) });
-      const { isAvailableAsync, shareAsync } = await import("expo-sharing");
-      if (await isAvailableAsync()) await shareAsync(uri, { mimeType: "application/pdf" });
-      else Alert.alert("PDF ready", uri);
-    } catch {
-      Alert.alert(
-        "Export unavailable",
-        "Install Expo Print and Sharing to export this label sheet.",
-      );
+      const { uri } = await Print.printToFileAsync({
+        html: createPdfMarkup(name, price),
+        width: PDF_WIDTH,
+        height: PDF_HEIGHT,
+      });
+      if (!(await Sharing.isAvailableAsync())) {
+        Alert.alert("PDF ready", uri);
+        return;
+      }
+      try {
+        await Sharing.shareAsync(uri, { mimeType: "application/pdf" });
+      } catch (error) {
+        console.error("PDF sharing failed", error);
+        Alert.alert("PDF created", `The PDF is ready at ${uri}`);
+      }
+    } catch (error) {
+      console.error("PDF export failed", error);
+      const message = error instanceof Error ? error.message : String(error);
+      Alert.alert("Export failed", message);
     }
   };
 
@@ -100,18 +104,13 @@ export default function App() {
           <Text style={styles.sectionTitle}>Your labels</Text>
           <Text style={styles.count}>{labels.length} saved</Text>
         </View>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.labelList}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.labelList}>
           {labels.map(label => (
             <Pressable
               key={label.id}
               onPress={() => selectLabel(label)}
               style={[styles.labelChip, label.id === activeId && styles.labelChipActive]}>
-              <Text style={[styles.chipName, label.id === activeId && styles.chipNameActive]}>
-                {label.name}
-              </Text>
+              <Text style={[styles.chipName, label.id === activeId && styles.chipNameActive]}>{label.name}</Text>
               <Text style={styles.chipPrice}>Rs. {label.price}</Text>
             </Pressable>
           ))}
@@ -135,12 +134,7 @@ export default function App() {
             <Text style={styles.inputLabel}>Price</Text>
             <View style={styles.priceInput}>
               <Text style={styles.currency}>Rs.</Text>
-              <TextInput
-                value={price}
-                onChangeText={setPrice}
-                keyboardType="decimal-pad"
-                style={styles.priceText}
-              />
+              <TextInput value={price} onChangeText={setPrice} keyboardType="decimal-pad" style={styles.priceText} />
             </View>
             <View style={styles.editorActions}>
               <Pressable
@@ -181,9 +175,7 @@ export default function App() {
           </View>
           <Text style={styles.exportArrow}>›</Text>
         </Pressable>
-        <Text style={styles.footer}>
-          PDF uses the exact 72 x 22 mm row size for your label printer.
-        </Text>
+        <Text style={styles.footer}>PDF uses the exact 72 x 22 mm row size for your label printer.</Text>
       </ScrollView>
       <StatusBar style="dark" />
     </SafeAreaView>
@@ -195,16 +187,32 @@ function Sticker({ name, price }: { name: string; price: string }) {
     <View style={styles.sticker}>
       <Text style={styles.stickerSmall}>Importer &amp; Marketer:</Text>
       <Text style={styles.stickerBrand}>KOSELI SUPPLIERS</Text>
-      <Text style={styles.stickerInfo}>Bharat Nagar, Nepal{`\n`}Food product</Text>
-      <Text style={styles.stickerName}>{name || "Product name"}</Text>
-      <Text style={styles.stickerWeight}>Net Weight: 100g</Text>
+      <Text style={styles.stickerInfo}>Biratnagar, Nepal</Text>
+      <Text style={styles.stickerSmall}>Email: milanlamsal70@gmail.com</Text>
+      <Text style={styles.stickerSmall}>Exim Code: 3016869700126NP </Text>
+      <Text style={styles.stickerName}>Item: {name || "Product name"}</Text>
       <Text style={styles.stickerPrice}>MRP.(NPR) Rs. {price || "0"} /-</Text>
     </View>
   );
 }
 function createPdfMarkup(name: string, price: string) {
-  const sticker = `<div class="sticker"><b>Importer &amp; Marketer:</b><strong>KOSELI SUPPLIERS</strong><small>Bharat Nagar, Nepal<br>Food product</small><strong>${name}</strong><small>Net Weight: 100g</small><b>MRP.(NPR) Rs. ${price} /-</b></div>`;
-  return `<html><head><style>@page{size:72mm 22mm;margin:0}body{margin:0;width:72mm;height:22mm;display:flex;align-items:center;justify-content:center;gap:2mm;font-family:Georgia;color:#222}.sticker{width:33mm;height:19mm;padding:1.5mm 2mm;font-size:5.5pt;line-height:1.05}.sticker strong{display:block;font-size:7pt}.sticker small{display:block;font-size:5pt}</style></head><body>${sticker}${sticker}</body></html>`;
+  const safeName = escapeHtml(name || "Product name");
+  const safePrice = escapeHtml(price || "0");
+  const sticker = `<div class="sticker"><span class="small">Importer &amp; Marketer:</span><strong>KOSELI SUPPLIERS</strong><span class="info">Biratnagar, Nepal</span><span class="small">Email: milanlamsal70@gmail.com</span><span class="small">Exim Code: 3016869700126NP</span><strong class="item">Item: ${safeName}</strong><b>MRP.(NPR) Rs. ${safePrice} /-</b></div>`;
+  return `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width, initial-scale=1.0"><style>*{box-sizing:border-box}@page{size:72mm 22mm;margin:0}html,body{width:72mm;height:22mm;margin:0;padding:0;overflow:hidden}body{display:flex;align-items:center;justify-content:center;gap:2mm;font-family:Georgia,serif;color:#222}.sticker{width:33mm;height:19mm;padding:2mm 2.5mm;border:0;display:flex;flex-direction:column;justify-content:center;font-size:5pt;line-height:5pt}.small{display:block;font-size:4.5pt;line-height:5pt}.info{display:block;font-size:4.5pt;font-weight:700;line-height:5pt}.sticker strong{display:block;font-size:6.5pt;font-weight:900;line-height:7pt}.sticker .item{height:14pt;max-height:14pt;margin-top:1mm;overflow:hidden;overflow-wrap:anywhere}.sticker b{display:block;font-size:5pt;font-weight:900;line-height:5.5pt;margin-top:0.5mm}</style></head><body>${sticker}${sticker}</body></html>`;
+}
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>'"]/g, character => {
+    const entities: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "'": "&#39;",
+      '"': "&quot;",
+    };
+    return entities[character];
+  });
 }
 
 const styles = StyleSheet.create({
@@ -338,7 +346,7 @@ const styles = StyleSheet.create({
   },
   stickerSmall: { color: "#1e2420", fontSize: 6 },
   stickerBrand: { color: "#1e2420", fontSize: 9, fontWeight: "900" },
-  stickerInfo: { color: "#30342f", fontSize: 5, lineHeight: 6 },
+  stickerInfo: { color: "#30342f", fontSize: 5, lineHeight: 6, fontWeight: "700" },
   stickerName: { color: "#1e2420", fontSize: 8, fontWeight: "900", marginTop: 4 },
   stickerWeight: { color: "#1e2420", fontSize: 6, fontWeight: "700" },
   stickerPrice: { color: "#1e2420", fontSize: 6, fontWeight: "900", marginTop: 2 },
