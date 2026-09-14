@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
-import { Check, ChevronRight, Download, FileText, Plus, Trash2 } from "lucide-react";
+import { Check, ChevronRight, Download, FileText, Plus, Search, Trash2, X } from "lucide-react";
 
 type Label = { id: string; name: string; price: string; priceSuffix: string };
 
@@ -45,9 +45,11 @@ export default function App() {
   const [name, setName] = useState(activeLabel.name);
   const [price, setPrice] = useState(activeLabel.price);
   const [priceSuffix, setPriceSuffix] = useState(activeLabel.priceSuffix);
+  const [searchQuery, setSearchQuery] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const [exportMessage, setExportMessage] = useState("");
   const sheetRef = useRef<HTMLDivElement>(null);
+  const filteredLabels = labels.filter(label => label.name.toLowerCase().includes(searchQuery.trim().toLowerCase()));
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(labels));
@@ -80,6 +82,7 @@ export default function App() {
   const addLabel = () => {
     const label = { id: createId(), name: "New product", price: "0", priceSuffix: "" };
     setLabels(current => [...current, label]);
+    setSearchQuery("");
     selectLabel(label);
   };
 
@@ -137,27 +140,35 @@ export default function App() {
         </div>
       </header>
 
-      <section className="intro-row">
+      <section className="search-row" aria-label="Find a saved label">
         <div>
-          <p className="section-kicker">PRINT WORKSPACE</p>
-          <h2>
-            Make the label once.
-            <br />
-            <em>Print it precisely.</em>
-          </h2>
+          <p className="section-kicker">LABEL LIBRARY</p>
+          <h2>Find a label</h2>
         </div>
-        <p className="intro-copy">
-          A focused two-up label maker for the counter, the stockroom, and everywhere in between.
-        </p>
+        <label className="search-field">
+          <Search size={19} aria-hidden="true" />
+          <span className="visually-hidden">Search labels by product name</span>
+          <input
+            value={searchQuery}
+            onChange={event => setSearchQuery(event.target.value)}
+            placeholder="Search by product name"
+            type="search"
+          />
+          {searchQuery && (
+            <button type="button" aria-label="Clear label search" onClick={() => setSearchQuery("")}>
+              <X size={17} />
+            </button>
+          )}
+        </label>
       </section>
 
       <section className="label-strip" aria-label="Saved labels">
         <div className="strip-heading">
           <span>Saved labels</span>
-          <strong>{labels.length.toString().padStart(2, "0")}</strong>
+          <strong>{filteredLabels.length.toString().padStart(2, "0")}</strong>
         </div>
         <div className="label-tabs">
-          {labels.map(label => (
+          {filteredLabels.map(label => (
             <button
               key={label.id}
               className={`label-tab ${label.id === activeId ? "selected" : ""}`}
@@ -169,6 +180,7 @@ export default function App() {
               </small>
             </button>
           ))}
+          {!filteredLabels.length && <p className="empty-search">No labels match “{searchQuery}”.</p>}
           <button className="new-label" onClick={addLabel}>
             <Plus size={16} /> New label
           </button>
@@ -186,7 +198,12 @@ export default function App() {
           </div>
           <label>
             Product name
-            <input value={name} onChange={event => setName(event.target.value)} placeholder="e.g. Kaju Katli" />
+            <textarea
+              value={name}
+              onChange={event => setName(event.target.value)}
+              placeholder="e.g. Kaju Katli"
+              rows={2}
+            />
           </label>
           <label>
             Price
