@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
-  base: "./",
+  base: "/",
   server: {
     allowedHosts: ["dev.sanketlamsal.com.np"],
     host: true,
@@ -26,8 +26,8 @@ export default defineConfig({
         theme_color: "#21443d",
         background_color: "#f7f5ef",
         display: "standalone",
-        scope: "./",
-        start_url: "./",
+        scope: "/",
+        start_url: "/",
         icons: [
           {
             src: "icon.svg",

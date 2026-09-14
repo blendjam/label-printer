@@ -1,4 +1,4 @@
-import { forwardRef, MouseEventHandler, useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { Check, ChevronRight, Download, FileText, Plus, Trash2 } from "lucide-react";
