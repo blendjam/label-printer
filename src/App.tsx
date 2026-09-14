@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useRef, useState } from "react";
+import { forwardRef, MouseEventHandler, useEffect, useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { Check, ChevronRight, Download, FileText, Plus, Trash2 } from "lucide-react";
@@ -8,9 +8,6 @@ type Label = { id: string; name: string; price: string; priceSuffix: string };
 const STORAGE_KEY = "label-studio-labels";
 const PAGE_WIDTH_MM = 72;
 const PAGE_HEIGHT_MM = 21;
-const STICKER_WIDTH_MM = 30;
-const STICKER_HEIGHT_MM = 19;
-const GAP_MM = 2;
 const INITIAL_LABELS: Label[] = [
   { id: "1", name: "SS Bat", price: "1200", priceSuffix: "" },
   { id: "2", name: "Mikasa Vollyball", price: "1500", priceSuffix: "" },
@@ -43,8 +40,8 @@ function readLabels() {
 
 export default function App() {
   const [labels, setLabels] = useState(() => readLabels());
-  const [activeId, setActiveId] = useState(() => labels[0].id);
-  const activeLabel = labels.find(label => label.id === activeId) || labels[0];
+  const [activeId, setActiveId] = useState(() => labels[0]?.id);
+  const activeLabel: Label = labels.find(label => label.id === activeId) ?? labels[0] ?? INITIAL_LABELS[0]!;
   const [name, setName] = useState(activeLabel.name);
   const [price, setPrice] = useState(activeLabel.price);
   const [priceSuffix, setPriceSuffix] = useState(activeLabel.priceSuffix);
@@ -89,13 +86,14 @@ export default function App() {
   const deleteLabel = () => {
     if (labels.length === 1) return;
     const next = labels.filter(label => label.id !== activeId);
+    const nextLabel = next[0];
+    if (!nextLabel) return;
     setLabels(next);
-    selectLabel(next[0]);
+    selectLabel(nextLabel);
   };
 
   const exportPdf = async () => {
     if (!sheetRef.current || isExporting) return;
-    const previewWindow = window.open("", "_blank");
     setIsExporting(true);
     setExportMessage("");
     try {
@@ -111,15 +109,11 @@ export default function App() {
         format: [PAGE_WIDTH_MM, PAGE_HEIGHT_MM],
         compress: true,
       });
-      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, PAGE_WIDTH_MM, PAGE_HEIGHT_MM, undefined, "FAST");
-      if (previewWindow) {
-        previewWindow.location.href = pdf.output("bloburl").toString();
-      }
+      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, PAGE_WIDTH_MM, PAGE_HEIGHT_MM, undefined, "SLOW");
       pdf.save(`label-${Date.now()}.pdf`);
       setExportMessage("PDF opened and downloaded");
     } catch (error) {
       console.error("PDF export failed", error);
-      previewWindow?.close();
       setExportMessage("Could not create the PDF");
     } finally {
       setIsExporting(false);
@@ -251,7 +245,6 @@ export default function App() {
         </span>
         <span className="export-copy">
           <strong>{isExporting ? "Preparing PDF..." : "Export print-ready PDF"}</strong>
-          <small>Opens and downloads an exact 72 × 21 mm file from this preview</small>
         </span>
         <ChevronRight className="export-chevron" size={23} />
       </button>
