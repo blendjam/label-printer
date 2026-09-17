@@ -388,41 +388,47 @@ footer,
   background-size: 16px 16px;
 }
 .sheet {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block; /* FIX: Replaced flex with block layout */
+  position: relative;
   width: 72mm;
   height: 24mm;
-  gap: 2mm;
   background: white;
   box-shadow: 0 16px 30px #1e25211c;
 }
+
+/* 
+   Since your sheet is 72mm wide and you want two stickers, 
+   we align them horizontally using block elements with a safe margin.
+*/
 .sticker {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  display: block; /* FIX: Replaced flex with block layout */
+  float: left; /* Aligns them side by side horizontally */
   width: 34mm;
   height: 20mm;
-  padding-left: 2mm;
+
+  /* Centering substitute for flex: use explicit top/left margins */
+  margin-top: 2mm;
+  margin-left: 2mm;
+
   overflow: hidden;
   color: black;
   background: white;
-  font-family: "IBM Plex Sans", serif-serif;
+  font-family: "IBM Plex Sans", sans-serif; /* FIX: Corrected "serif-serif" typo */
 }
+
 .sticker > * {
   display: block;
   width: 100%;
-  min-width: 0;
   font-size: 5pt;
   font-weight: 500;
   line-height: 6pt;
 }
+
 .sticker-item {
-  overflow-wrap: normal;
-  flex-shrink: 0;
   white-space: pre-line;
+  word-wrap: break-word; /* Ensures text respects boundaries without shrinking rules */
 }
+
 .preview-caption {
   justify-content: space-between;
   padding-top: 13px;

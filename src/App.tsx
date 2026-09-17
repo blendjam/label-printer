@@ -2,6 +2,8 @@ import { forwardRef, useEffect, useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { Check, ChevronRight, Download, FileText, Plus, Search, Trash2, X } from "lucide-react";
+import { Directory, Filesystem } from "@capacitor/filesystem";
+import PdfOpener from "./plugins/pdfOpenerPlugin";
 
 const VERSION = "1.0.0";
 
@@ -97,29 +99,75 @@ export default function App() {
     selectLabel(nextLabel);
   };
 
+  const openPdf = async (pdf: jsPDF) => {
+    setExportMessage("Trying open pdf");
+    const base64 = pdf.output("datauristring").split(",")[1];
+    if (!base64) {
+      setExportMessage("No base64");
+      return;
+    }
+    const fileName = `label-${Date.now()}.pdf`;
+
+    const result = await Filesystem.writeFile({
+      path: fileName,
+      data: base64,
+      directory: Directory.Cache,
+    });
+    setExportMessage("Made File");
+    await PdfOpener.open({
+      uri: result.uri,
+    });
+  };
+
   const exportPdf = async () => {
     if (!sheetRef.current || isExporting) return;
     setIsExporting(true);
     setExportMessage("");
     try {
-      const SCALE = 8;
+      const SCALE = 4;
       const width = PAGE_WIDTH_MM * SCALE;
       const height = PAGE_HEIGHT_MM * SCALE;
+
+      // Give the native UI thread enough time to settle
+      await new Promise(resolve => setTimeout(resolve, 250));
+
       const canvas = await html2canvas(sheetRef.current, {
         scale: SCALE,
         backgroundColor: "#ffffff",
         useCORS: true,
         logging: false,
+        // Enforce absolute layout boundaries during capture translation
+        width: sheetRef.current.getBoundingClientRect().width,
+        height: sheetRef.current.getBoundingClientRect().height,
+        onclone: clonedDocument => {
+          // FIX: Locate the cloned preview sheet element within the capture scope
+          const clonedSheet = clonedDocument.querySelector(".sheet") as HTMLDivElement | null;
+          if (clonedSheet) {
+            // Flatten Flexbox into solid Block alignments for html2canvas compilation stability
+            clonedSheet.style.display = "block";
+            clonedSheet.style.position = "relative";
+            clonedSheet.style.boxSizing = "border-box";
+
+            const clonedStickers = clonedSheet.querySelectorAll(".sticker");
+            clonedStickers.forEach(stickerElement => {
+              const sticker = stickerElement as HTMLElement;
+              sticker.style.display = "block";
+              sticker.style.float = "left";
+              sticker.style.boxSizing = "border-box";
+            });
+          }
+        },
       });
+
       const pdf = new jsPDF({
         orientation: "landscape",
         unit: "mm",
         format: [width, height],
         compress: true,
       });
+
       pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, width, height, undefined);
-      pdf.save(`${name}-${price}-${activeId}`);
-      setExportMessage("PDF opened and downloaded");
+      await openPdf(pdf);
     } catch (error) {
       console.error("PDF export failed", error);
       setExportMessage("Could not create the PDF");
