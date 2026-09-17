@@ -6,8 +6,8 @@ import { Check, ChevronRight, Download, FileText, Plus, Search, Trash2, X } from
 type Label = { id: string; name: string; price: string; priceSuffix: string };
 
 const STORAGE_KEY = "label-studio-labels";
-const PAGE_WIDTH_MM = 72;
-const PAGE_HEIGHT_MM = 21;
+const PAGE_WIDTH_MM = 77;
+const PAGE_HEIGHT_MM = 24;
 const INITIAL_LABELS: Label[] = [
   { id: "1", name: "SS Bat", price: "1200", priceSuffix: "" },
   { id: "2", name: "Mikasa Vollyball", price: "1500", priceSuffix: "" },
@@ -100,7 +100,7 @@ export default function App() {
     setIsExporting(true);
     setExportMessage("");
     try {
-      const EXPORT_SCALE = 4;
+      const EXPORT_SCALE = 8;
       const canvas = await html2canvas(sheetRef.current, {
         scale: EXPORT_SCALE,
         backgroundColor: "#ffffff",
@@ -115,8 +115,8 @@ export default function App() {
         format: [pdfWidth, pdfHeight],
         compress: false,
       });
-      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, pdfWidth, pdfHeight, undefined, "SLOW");
-      pdf.save(`label-${activeLabel.name}-${activeLabel.price}`);
+      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, pdfWidth, pdfHeight, undefined);
+      pdf.save(`${activeLabel.name}-${activeLabel.price}${activeLabel.id}`);
       setExportMessage("PDF opened and downloaded");
     } catch (error) {
       console.error("PDF export failed", error);
@@ -139,7 +139,9 @@ export default function App() {
         </div>
         <div className="topbar-actions">
           <span className="status-dot">Offline-ready</span>
-          <span className="format-pill">72 × 21 mm</span>
+          <span className="format-pill">
+            {PAGE_WIDTH_MM} × {PAGE_HEIGHT_MM} mm
+          </span>
         </div>
       </header>
 
@@ -245,7 +247,7 @@ export default function App() {
               <p className="section-kicker">LIVE PREVIEW</p>
               <h3>Two-up sheet</h3>
             </div>
-            <span className="preview-size">30 × 19 mm each</span>
+            <span className="preview-size">34 × 20 mm each</span>
           </div>
           <div className="preview-stage">
             <StickerSheet ref={sheetRef} name={name} price={price} priceSuffix={priceSuffix} />
@@ -254,7 +256,7 @@ export default function App() {
             <span>
               <span className="caption-dot" /> Exact print area
             </span>
-            <span>2 mm gap</span>
+            <span>4 mm gap</span>
           </div>
         </section>
       </section>
