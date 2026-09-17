@@ -403,7 +403,7 @@ footer,
   justify-content: center;
   width: 30mm;
   height: 19mm;
-  padding: 2mm 2mm 1mm 2mm;
+  padding: 0mm 2mm 1mm 2mm;
   overflow: hidden;
   color: black;
   background: white;

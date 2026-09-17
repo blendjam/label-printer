@@ -201,7 +201,7 @@ export default function App() {
             <textarea
               value={name}
               onChange={event => setName(event.target.value)}
-              placeholder="e.g. Kaju Katli"
+              placeholder="e.g. Mikasa Vollyball"
               rows={2}
             />
           </label>
