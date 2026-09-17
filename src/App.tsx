@@ -3,10 +3,12 @@ import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { Check, ChevronRight, Download, FileText, Plus, Search, Trash2, X } from "lucide-react";
 
+const VERSION = "1.0.0";
+
 type Label = { id: string; name: string; price: string; priceSuffix: string };
 
 const STORAGE_KEY = "label-studio-labels";
-const PAGE_WIDTH_MM = 77;
+const PAGE_WIDTH_MM = 72;
 const PAGE_HEIGHT_MM = 24;
 const INITIAL_LABELS: Label[] = [
   { id: "1", name: "SS Bat", price: "1200", priceSuffix: "" },
@@ -100,23 +102,23 @@ export default function App() {
     setIsExporting(true);
     setExportMessage("");
     try {
-      const EXPORT_SCALE = 8;
+      const SCALE = 8;
+      const width = PAGE_WIDTH_MM * SCALE;
+      const height = PAGE_HEIGHT_MM * SCALE;
       const canvas = await html2canvas(sheetRef.current, {
-        scale: EXPORT_SCALE,
+        scale: SCALE,
         backgroundColor: "#ffffff",
         useCORS: true,
         logging: false,
       });
-      const pdfWidth = PAGE_WIDTH_MM * EXPORT_SCALE;
-      const pdfHeight = PAGE_HEIGHT_MM * EXPORT_SCALE;
       const pdf = new jsPDF({
         orientation: "landscape",
         unit: "mm",
-        format: [pdfWidth, pdfHeight],
-        compress: false,
+        format: [width, height],
+        compress: true,
       });
-      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, pdfWidth, pdfHeight, undefined);
-      pdf.save(`${activeLabel.name}-${activeLabel.price}${activeLabel.id}`);
+      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, width, height, undefined);
+      pdf.save(`${name}-${price}-${activeId}`);
       setExportMessage("PDF opened and downloaded");
     } catch (error) {
       console.error("PDF export failed", error);
@@ -142,6 +144,7 @@ export default function App() {
           <span className="format-pill">
             {PAGE_WIDTH_MM} × {PAGE_HEIGHT_MM} mm
           </span>
+          <span>v{VERSION}</span>
         </div>
       </header>
 
@@ -247,7 +250,9 @@ export default function App() {
               <p className="section-kicker">LIVE PREVIEW</p>
               <h3>Two-up sheet</h3>
             </div>
-            <span className="preview-size">34 × 20 mm each</span>
+            <span className="preview-size">
+              Print Size: {PAGE_WIDTH_MM} × {PAGE_HEIGHT_MM} mm
+            </span>
           </div>
           <div className="preview-stage">
             <StickerSheet ref={sheetRef} name={name} price={price} priceSuffix={priceSuffix} />
@@ -256,7 +261,7 @@ export default function App() {
             <span>
               <span className="caption-dot" /> Exact print area
             </span>
-            <span>4 mm gap</span>
+            <span>34x20 each 2 mm gap</span>
           </div>
         </section>
       </section>

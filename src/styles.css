@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,100..700;1,100..700&display=swap");
 
 :root {
   color: #1e2521;
@@ -390,9 +391,9 @@ footer,
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 77mm;
+  width: 72mm;
   height: 24mm;
-  gap: 4mm;
+  gap: 2mm;
   background: white;
   box-shadow: 0 16px 30px #1e25211c;
 }
@@ -407,14 +408,14 @@ footer,
   overflow: hidden;
   color: black;
   background: white;
-  font-family: Georgia, serif;
+  font-family: "IBM Plex Sans", serif-serif;
 }
 .sticker > * {
   display: block;
   width: 100%;
   min-width: 0;
-  font-size: 4.5pt;
-  font-weight: 700;
+  font-size: 5pt;
+  font-weight: 500;
   line-height: 6pt;
 }
 .sticker-item {
