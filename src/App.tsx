@@ -100,20 +100,23 @@ export default function App() {
     setIsExporting(true);
     setExportMessage("");
     try {
+      const EXPORT_SCALE = 4;
       const canvas = await html2canvas(sheetRef.current, {
-        scale: 4,
+        scale: EXPORT_SCALE,
         backgroundColor: "#ffffff",
         useCORS: true,
         logging: false,
       });
+      const pdfWidth = PAGE_WIDTH_MM * EXPORT_SCALE;
+      const pdfHeight = PAGE_HEIGHT_MM * EXPORT_SCALE;
       const pdf = new jsPDF({
         orientation: "landscape",
         unit: "mm",
-        format: [PAGE_WIDTH_MM, PAGE_HEIGHT_MM],
-        compress: true,
+        format: [pdfWidth, pdfHeight],
+        compress: false,
       });
-      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, PAGE_WIDTH_MM, PAGE_HEIGHT_MM, undefined, "SLOW");
-      pdf.save(`label-${Date.now()}.pdf`);
+      pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, pdfWidth, pdfHeight, undefined, "SLOW");
+      pdf.save(`label-${activeLabel.name}-${activeLabel.price}`);
       setExportMessage("PDF opened and downloaded");
     } catch (error) {
       console.error("PDF export failed", error);
@@ -294,7 +297,7 @@ const Sticker = ({ name, price, priceSuffix }: StickerSheetProps) => (
     <span>EXIM CODE: 3016869700126NP</span>
     <span className="sticker-item">ITEM: {name || "Product name"}</span>
     <span className="price-tag">
-      MRP: रु. {price || "0"} / {priceSuffix.trim() ? ` ${priceSuffix.trim()}` : ""}
+      MRP: NPR. {price || "0"} / {priceSuffix.trim() ? ` ${priceSuffix.trim()}` : ""}
     </span>
   </article>
 );
